@@ -21,7 +21,7 @@ public class HttpServer {
         checkDocRoot();
         try (ServerSocket server = new ServerSocket(PORT)) {
             while (true) {
-                HttpClientConnection session = new HttpClientConnection(server.accept());
+                HttpClientConnection session = new HttpClientConnection(server.accept(), DOCROOT);
                 ExecutorService es = Executors.newFixedThreadPool(3);
                 es.submit(session);
             }
