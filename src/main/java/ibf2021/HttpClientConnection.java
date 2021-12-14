@@ -1,7 +1,10 @@
 package ibf2021;
 
+import org.junit.platform.commons.util.StringUtils;
+
 import java.io.*;
 import java.net.Socket;
+import java.util.Base64;
 import java.util.List;
 import java.util.Scanner;
 
@@ -27,7 +30,6 @@ public class HttpClientConnection implements Runnable {
             if ((line = br.readLine()) != null) {
                 getResource(line);
             }
-
             socket.close();
 
         } catch (IOException e) {
@@ -53,9 +55,9 @@ public class HttpClientConnection implements Runnable {
 
 
         if("GET".equals(method)) {
-//            if(!resource.exists()) {
-//                sendNotFoundResponse(resource);
-//            }
+            if(!resource.exists()) {
+                sendNotFoundResponse(resource);
+            }
             if(!resourceExists(filename)) {
                 sendNotFoundResponse(resource);
             }
@@ -69,12 +71,16 @@ public class HttpClientConnection implements Runnable {
     }
 
     private boolean resourceExists(String filename) {
+        boolean fileExists = false;
         for (String item: DOCROOT) {
-            if(!item.equals(filename)) {
-                return false;
+            File dir = new File(item);
+            for(File f :dir.listFiles()) {
+                List<String> list = List.of(f.getName().split("//")) ;
+                if(list.get(list.size()-1).equals(filename))
+                    fileExists = true;
             }
         }
-        return true;
+        return fileExists;
     }
 
     private void sendResponse(String method, String filename){
@@ -91,8 +97,7 @@ public class HttpClientConnection implements Runnable {
 
         try (PrintWriter socketWriter = new PrintWriter(socket.getOutputStream(), true);
              Scanner fileReader = new Scanner(path);
-             DataOutputStream output = new DataOutputStream(socket.getOutputStream());
-             BufferedOutputStream bos = new BufferedOutputStream(output)) {
+             DataOutputStream output = new DataOutputStream(socket.getOutputStream())) {
 
             StringBuilder msg = new StringBuilder();
 
@@ -100,23 +105,26 @@ public class HttpClientConnection implements Runnable {
                 msg.append("HTTP/1.1 200 OK\r\n");
                 msg.append("Content-Type: image/png\r\n\r\n");
                 msg.append("<!DOCTYPE html>\n" + "<html lang=\"en\">");
+//                msg.append(String.format("<body><img src=\"data:png;base64,(base64 text)\"></body>", path));
                 msg.append(String.format("<body><img src=\"%s\"></body>", path));
                 msg.append("</html>");
-                bos.write(msg.toString().getBytes());
+//                socket.getOutputStream().write(msg.toString().getBytes("UTF-8"));
+                output.write(msg.toString().getBytes("UTF-8"));
+//                output.write(Base64.getDecoder().decode(msg.toString()));
                 System.out.println(msg);
             }
 
             else {
                 msg.append("HTTP/1.1 200 OK\r\n\r\n");
-                msg.append("<!DOCTYPE html>\n" + "<html lang=\"en\">");
+//                msg.append("<!DOCTYPE html>\n" + "<html lang=\"en\">");
                 while(fileReader.hasNext()){
                     String line = fileReader.nextLine();
                     System.out.println(line);
                     msg.append(line);
                 }
-                msg.append("</html>");
+//                msg.append("</html>");
                 output.write(msg.toString().getBytes());
-                System.out.println(msg.toString());
+                System.out.println(msg);
                 /*            while(fileReader.hasNext()){
                 String line = fileReader.nextLine();
                 System.out.println(line);
@@ -132,12 +140,14 @@ public class HttpClientConnection implements Runnable {
     }
 
     private void sendBadResponse(String line){
-        try (PrintWriter socketWriter = new PrintWriter(socket.getOutputStream(), true)) {
+        try (PrintWriter socketWriter = new PrintWriter(socket.getOutputStream(), true);
+             DataOutputStream output = new DataOutputStream(socket.getOutputStream())) {
 
             String msg = String.format("HTTP/1.1 405 Method Not Allowed\r\n\r\n%s not supported\r\n", line);
 
             System.out.println(msg);
-            socketWriter.println(msg);
+            output.write(msg.getBytes());
+//            socketWriter.println(msg);
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -146,12 +156,14 @@ public class HttpClientConnection implements Runnable {
     }
 
     private void sendNotFoundResponse(File resource) {
-        try (PrintWriter socketWriter = new PrintWriter(socket.getOutputStream(), true)) {
+        try (PrintWriter socketWriter = new PrintWriter(socket.getOutputStream(), true);
+             DataOutputStream output = new DataOutputStream(socket.getOutputStream())) {
 
             String msg = String.format("HTTP/1.1 404 Not Found\r\n\r\n%s not found\r\n", resource);
 
             System.out.println(msg);
-            socketWriter.println(msg);
+            output.write(msg.getBytes());
+//            socketWriter.println(msg);
 
         } catch (IOException e) {
             e.printStackTrace();
