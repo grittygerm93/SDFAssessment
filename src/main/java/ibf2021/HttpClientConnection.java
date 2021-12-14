@@ -2,6 +2,7 @@ package ibf2021;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.EOFException;
 import java.io.IOException;
 import java.net.Socket;
 
@@ -20,12 +21,14 @@ public class HttpClientConnection implements Runnable {
 
             while (true) {
                 String msg = input.readUTF();
+                if("exit".equals(msg))
+                    break;
                 output.writeUTF(msg);
             }
+            socket.close();
 
-//           socket.close();
         } catch (IOException e) {
-            e.printStackTrace();
+            //do something... EOFexception when client exits
         }
     }
 
