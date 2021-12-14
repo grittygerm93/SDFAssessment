@@ -1,0 +1,15 @@
+#abcd {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+img {
+    width: 300px;
+    display: block;
+}
+
+img h1 a {
+    text-align: center;
+}

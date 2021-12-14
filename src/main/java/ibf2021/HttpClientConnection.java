@@ -2,7 +2,6 @@ package ibf2021;
 
 import java.io.*;
 import java.net.Socket;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Scanner;
 
@@ -25,20 +24,9 @@ public class HttpClientConnection implements Runnable {
 
             System.out.println("request from browser client:");
             String line;
-            //reads and prints every line from the request
             if ((line = br.readLine()) != null) {
-//                output.writeUTF(line); doesnt work... not sure why..
                 getResource(line);
-
-
-//                System.out.println(line);
             }
-
-            //sample inputs GET<space>/index.html<space>HTTP/1.1
-
-            //sample output HTTP/1.1<space>200<space>OK\r\n
-            //\r\n
-            //contents in bytes
 
             socket.close();
 
@@ -54,8 +42,8 @@ public class HttpClientConnection implements Runnable {
         String method = parts[0];
         String filename;
         if("/".equals(parts[1])) {
-            filename = "src/main/resources/test.txt";
-//            filename = "index.html";
+//            filename = "src/main/resources/rabbit.png";
+            filename = "index.html";
         }
         else {
             filename = parts[1].substring(1);
@@ -65,12 +53,12 @@ public class HttpClientConnection implements Runnable {
 
 
         if("GET".equals(method)) {
-            if(!resource.exists()) {
-                sendNotFoundResponse(resource);
-            }
-//            if(!resourceExists(filename)) {
+//            if(!resource.exists()) {
 //                sendNotFoundResponse(resource);
 //            }
+            if(!resourceExists(filename)) {
+                sendNotFoundResponse(resource);
+            }
             else {
                 sendResponse(method, filename);
             }
@@ -91,43 +79,53 @@ public class HttpClientConnection implements Runnable {
 
     private void sendResponse(String method, String filename){
 
-//        File path = null;
-//
-//        for(String location: DOCROOT) {
-//            path = new File(String.format("%s.%s", location, filename));
-//            if(path.exists()) {
-//                break;
-//            }
-//        }
-        File path = new File(filename);
+        File path = null;
+
+        for(String location: DOCROOT) {
+            path = new File(String.format("%s.%s", location, filename));
+            if(path.exists()) {
+                break;
+            }
+        }
+//        File path = new File(filename);
 
         try (PrintWriter socketWriter = new PrintWriter(socket.getOutputStream(), true);
              Scanner fileReader = new Scanner(path);
-             DataOutputStream output = new DataOutputStream(socket.getOutputStream());) {
+             DataOutputStream output = new DataOutputStream(socket.getOutputStream());
+             BufferedOutputStream bos = new BufferedOutputStream(output)) {
 
-//            String msg = String.format("HTTP/1.1 200 OK\r\n\r\n");
             StringBuilder msg = new StringBuilder();
-            msg.append("HTTP/1.1 200 OK\r\n\r\n");
-            msg.append("<!DOCTYPE html>\n" + "<html lang=\"en\">");
 
-            //System.out.println(msg);
-//            socketWriter.println(msg);
-            while(fileReader.hasNext()){
+            if(filename.contains("png")) {
+                msg.append("HTTP/1.1 200 OK\r\n");
+                msg.append("Content-Type: image/png\r\n\r\n");
+                msg.append("<!DOCTYPE html>\n" + "<html lang=\"en\">");
+                msg.append(String.format("<body><img src=\"%s\"></body>", path));
+                msg.append("</html>");
+                bos.write(msg.toString().getBytes());
+                System.out.println(msg);
+            }
+
+            else {
+                msg.append("HTTP/1.1 200 OK\r\n\r\n");
+                msg.append("<!DOCTYPE html>\n" + "<html lang=\"en\">");
+                while(fileReader.hasNext()){
+                    String line = fileReader.nextLine();
+                    System.out.println(line);
+                    msg.append(line);
+                }
+                msg.append("</html>");
+                output.write(msg.toString().getBytes());
+                System.out.println(msg.toString());
+                /*            while(fileReader.hasNext()){
                 String line = fileReader.nextLine();
                 System.out.println(line);
-                msg.append(line);
+                socketWriter.println(line);
+            }*/
             }
-            msg.append("</html>");
-            output.write(msg.toString().getBytes());
-            System.out.println(msg.toString());
 
 
 
-//            while(fileReader.hasNext()){
-//                String line = fileReader.nextLine();
-//                System.out.println(line);
-//                socketWriter.println(line);
-//            }
         } catch (IOException e) {
             e.printStackTrace();
         }
