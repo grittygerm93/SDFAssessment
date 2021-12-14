@@ -1,10 +1,11 @@
-/*
+package ibf2021;
+
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
 
-public class HttpClientConnection implements Runnable{
+public class HttpClientConnection implements Runnable {
 
     private final Socket socket;
 
@@ -17,17 +18,16 @@ public class HttpClientConnection implements Runnable{
         try (DataInputStream input = new DataInputStream(socket.getInputStream());
              DataOutputStream output = new DataOutputStream(socket.getOutputStream())) {
 
-            while(true) {
+            while (true) {
                 String msg = input.readUTF();
                 output.writeUTF(msg);
             }
 
-           socket.close();
+//           socket.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    }
 }
-*/
+

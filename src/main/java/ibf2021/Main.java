@@ -1,5 +1,6 @@
 package ibf2021;
 
+import java.net.http.HttpClient;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -37,11 +38,13 @@ public class Main {
 
         }
 
+        HttpServer server = new HttpServer(PORT, DOCROOT);
+        server.startServer();
 
-        System.out.println(PORT);
-        System.out.println(DOCROOT);
 
-
+//        System.out.println(PORT);
+//        System.out.println(DOCROOT);
+//        To RUN java -jar  myserver-1.jar
 
     }
 }
